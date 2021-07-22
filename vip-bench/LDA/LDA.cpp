@@ -1,9 +1,10 @@
 #include<iostream>
 #include<math.h>
 #include<iomanip>
-#include "utils.h"
 
 #include "../config.h"
+#include "utils.h"
+#include "mathlib.h"
 
 using namespace std;
 
@@ -53,63 +54,63 @@ void initializeData(double cond1,double cond2){
 	mysrand(10);
 	//initialize class1 test data and training data
 	for (int i=0; i < sizec1; i++){
-		datax[i] = (VIP_ENCDOUBLE)(myrand()%40);
-		datay[i] = (VIP_ENCDOUBLE)(cond1*VIP_DEC(datax[i]) + cond2 + myrand()%40);
+		datax[i] = myrand()%40;
+		datay[i] = cond1*datax[i] + cond2 + myrand()%40;
 		datayC1[i] = datay[i];
 		dataxC1[i] = datax[i];
 			
-		dataxC1test[i] = (VIP_ENCDOUBLE)(myrand()%40);
-		datayC1test[i] = (VIP_ENCDOUBLE)(cond1*VIP_DEC(dataxC1test[i]) + cond2 + myrand()%40);
+		dataxC1test[i] = myrand()%40;
+		datayC1test[i] = cond1*dataxC1test[i] + cond2 + myrand()%40;
 	}
 	//initialize class2 test data and training data
 	for (int i=0; i < sizec2; i++){
-		datax[i+sizec1-1] = (VIP_ENCDOUBLE)(myrand()%40);
-		datay[i+sizec1-1] = (VIP_ENCDOUBLE)(cond1*VIP_DEC(datax[i+sizec1-1]) + cond2 - myrand()%40);
+		datax[i+sizec1-1] = myrand()%40;
+		datay[i+sizec1-1] = cond1*datax[i+sizec1-1] + cond2 - myrand()%40;
 		datayC2[i] = datay[i+sizec1-1];
 		dataxC2[i] = datax[i+sizec1-1];
 			
-		dataxC2test[i] = (VIP_ENCDOUBLE)(myrand()%40);
-		datayC2test[i] = (VIP_ENCDOUBLE)(cond1*VIP_DEC(dataxC2test[i]) + cond2 - myrand()%40);
+		dataxC2test[i] = myrand()%40;
+		datayC2test[i] = cond1*dataxC2test[i] + cond2 - myrand()%40;
 	}	    
 }
 
 //calculates the mean of an array
 VIP_ENCDOUBLE mean(VIP_ENCDOUBLE* data,int size){
 
-	VIP_ENCDOUBLE sum = (VIP_ENCDOUBLE)0;
+	VIP_ENCDOUBLE sum = 0;
 	
 	for (int i=0;i<size;i++){
-		sum = (VIP_ENCDOUBLE)(VIP_DEC(sum)+VIP_DEC(data[i]));
+		sum = sum + data[i];
 	}
-	return (VIP_ENCDOUBLE)(VIP_DEC(sum)/size);
+	return sum / size;
 }
 
 //calculates the variance of an array
 VIP_ENCDOUBLE varaince(VIP_ENCDOUBLE data[],VIP_ENCDOUBLE mean,int size){
 
-	VIP_ENCDOUBLE sum = (VIP_ENCDOUBLE)0;
-	VIP_ENCDOUBLE dev = (VIP_ENCDOUBLE)0;
+	VIP_ENCDOUBLE sum = 0;
+	VIP_ENCDOUBLE dev = 0;
 	
 	for(int i = 0;i<size;i++){			
-		dev = (VIP_ENCDOUBLE)(VIP_DEC(data[i]) - VIP_DEC(mean));
-		sum = (VIP_ENCDOUBLE)(VIP_DEC(sum)+pow(VIP_DEC(dev),2));
+		dev = data[i] - mean;
+		sum = sum + mypow(dev,2);
 	}		
-	return (VIP_ENCDOUBLE)(VIP_DEC(sum)/size);
+	return sum / size;
 }
 
 //calculates the covariance between two arrays
 VIP_ENCDOUBLE covariance (VIP_ENCDOUBLE datax[],VIP_ENCDOUBLE datay[],VIP_ENCDOUBLE meanx,VIP_ENCDOUBLE meany,int size){
 
-	VIP_ENCDOUBLE sum = (VIP_ENCDOUBLE)0;
-	VIP_ENCDOUBLE devx = (VIP_ENCDOUBLE)0;
-	VIP_ENCDOUBLE devy = (VIP_ENCDOUBLE)0;
+	VIP_ENCDOUBLE sum = 0;
+	VIP_ENCDOUBLE devx = 0;
+	VIP_ENCDOUBLE devy = 0;
 	
 	for(int i=0 ;i<size;i++){
-		devx = (VIP_ENCDOUBLE)(VIP_DEC(datax[i])-VIP_DEC(meanx));
-		devy = (VIP_ENCDOUBLE)(VIP_DEC(datay[i])-VIP_DEC(meany));
-		sum = (VIP_ENCDOUBLE)(VIP_DEC(sum)+VIP_DEC(devx)*VIP_DEC(devy));
+		devx = datax[i] - meanx;
+		devy = datay[i] - meany;
+		sum = sum + devx * devy;
 	}		
-	return VIP_ENCDOUBLE(VIP_DEC(sum)/size);	
+	return sum / size;	
 }
 
 //Builds the variance-covaraince matrix between two arrays
@@ -144,7 +145,7 @@ VIP_ENCDOUBLE** wgcov(VIP_ENCDOUBLE dataxc1[],VIP_ENCDOUBLE datayc1[],VIP_ENCDOU
 
 	for(int i = 0;i<2;i++){
 		for(int j = 0;j<2;j++){
-			out[i][j] = (VIP_ENCDOUBLE)((VIP_DEC(c1[i][j])*(sizec1-1)+VIP_DEC(c2[i][j])*(sizec2-1))/(sizec1+sizec2-2));
+			out[i][j] = (c1[i][j]*(sizec1-1)+c2[i][j]*(sizec2-1))/(sizec1+sizec2-2);
 		}
 	}
 
@@ -164,7 +165,7 @@ VIP_ENCDOUBLE** bgcov(VIP_ENCDOUBLE datax[],VIP_ENCDOUBLE datay[],VIP_ENCDOUBLE*
 
 	for(int i = 0;i<2;i++){
 		for(int j = 0;j<2;j++){
-			out[i][j] = (VIP_ENCDOUBLE)(VIP_DEC(totcov[i][j])-VIP_DEC(wgcova[i][j]));
+			out[i][j] = totcov[i][j]-wgcova[i][j];
 		}
 	}
 
@@ -173,7 +174,7 @@ VIP_ENCDOUBLE** bgcov(VIP_ENCDOUBLE datax[],VIP_ENCDOUBLE datay[],VIP_ENCDOUBLE*
 
 //calculates the determinant of 2x2 matrix
 VIP_ENCDOUBLE determinant(VIP_ENCDOUBLE** matr){
-	return (VIP_ENCDOUBLE)(VIP_DEC(matr[0][0])*VIP_DEC(matr[1][1]) - VIP_DEC(matr[0][1])*VIP_DEC(matr[1][0]));
+	return matr[0][0]*matr[1][1] - matr[0][1]*matr[1][0];
 }
 
 //calculates the inverse of a 2x2 matrix
@@ -183,10 +184,10 @@ VIP_ENCDOUBLE** inverse(VIP_ENCDOUBLE** matr){
 	out[0] = new VIP_ENCDOUBLE [2];
 	out[1] = new VIP_ENCDOUBLE [2];
 
-	out[0][0] = (VIP_ENCDOUBLE)(VIP_DEC(matr[1][1])/VIP_DEC(determinant(matr)));
-	out[0][1] = (VIP_ENCDOUBLE)(-VIP_DEC(matr[0][1])/VIP_DEC(determinant(matr)));
-	out[1][0] = (VIP_ENCDOUBLE)(-VIP_DEC(matr[1][0])/VIP_DEC(determinant(matr)));
-	out[1][1] = (VIP_ENCDOUBLE)(VIP_DEC(matr[0][0])/VIP_DEC(determinant(matr)));
+	out[0][0] = matr[1][1]/determinant(matr);
+	out[0][1] = -matr[0][1]/determinant(matr);
+	out[1][0] = -matr[1][0]/determinant(matr);
+	out[1][1] = matr[0][0]/determinant(matr);
 
 	return out;
 }
@@ -200,9 +201,9 @@ VIP_ENCDOUBLE** multiply(VIP_ENCDOUBLE** matr1,VIP_ENCDOUBLE** matr2){
 	
 	for(int i = 0; i < 2; ++i){
 		for(int j = 0; j < 2; ++j){
-			out[i][j] = (VIP_ENCDOUBLE)0;
+			out[i][j] = 0;
 			for(int k = 0; k < 2; ++k){
-				out[i][j] = (VIP_ENCDOUBLE)(VIP_DEC(out[i][j])+VIP_DEC(matr1[i][k])*VIP_DEC(matr2[k][j]));
+				out[i][j] = out[i][j]+matr1[i][k]*matr2[k][j];
 			}
 		}
 	}
@@ -213,12 +214,12 @@ VIP_ENCDOUBLE** multiply(VIP_ENCDOUBLE** matr1,VIP_ENCDOUBLE** matr2){
 VIP_ENCDOUBLE* eignevalue(VIP_ENCDOUBLE** matr){
 	
 	int a = 1;
-	VIP_ENCDOUBLE b = (VIP_ENCDOUBLE)(-(VIP_DEC(matr[0][0])+VIP_DEC(matr[1][1])));	
-	VIP_ENCDOUBLE c = (VIP_ENCDOUBLE)(VIP_DEC(matr[0][0])*VIP_DEC(matr[1][1]) - VIP_DEC(matr[0][1])*VIP_DEC(matr[1][0]));	
+	VIP_ENCDOUBLE b = -(matr[0][0]+matr[1][1]);	
+	VIP_ENCDOUBLE c = matr[0][0]*matr[1][1] - matr[0][1]*matr[1][0];	
 
 	VIP_ENCDOUBLE* out = new VIP_ENCDOUBLE[2];
-	out[0] = (VIP_ENCDOUBLE)((-VIP_DEC(b)+sqrt(pow(VIP_DEC(b),2)-4*a*VIP_DEC(c)))/(2*a));
-	out[1] = (VIP_ENCDOUBLE)((-VIP_DEC(b)-sqrt(pow(VIP_DEC(b),2)-4*a*VIP_DEC(c)))/(2*a));
+	out[0] = (-b+mysqrt(mypow(b,2)-4*a*c))/(2*a);
+	out[1] = (-b-mysqrt(mypow(b,2)-4*a*c))/(2*a);
 	
 	return out;
 }
@@ -226,8 +227,8 @@ VIP_ENCDOUBLE* eignevalue(VIP_ENCDOUBLE** matr){
 //calculates an eignevector given an eignevalue and a 2x2 matrix
 VIP_ENCDOUBLE* eignevector(VIP_ENCDOUBLE** matr, VIP_ENCDOUBLE eigneval){
 	VIP_ENCDOUBLE* out = new VIP_ENCDOUBLE[2];
-	out[0] = (VIP_ENCDOUBLE)(VIP_DEC(matr[0][1])/sqrt(pow((VIP_DEC(matr[0][0])-VIP_DEC(eigneval)),2)+pow(VIP_DEC(matr[0][1]),2)));
-	out[1] = VIP_ENCDOUBLE(-(VIP_DEC(matr[0][0])-VIP_DEC(eigneval))/sqrt(pow((VIP_DEC(matr[0][0])-VIP_DEC(eigneval)),2)+pow(VIP_DEC(matr[0][1]),2)));
+	out[0] = matr[0][1]/mysqrt(mypow((matr[0][0]-eigneval),2)+mypow(matr[0][1],2));
+	out[1] = -(matr[0][0]-eigneval)/mysqrt(mypow((matr[0][0]-eigneval),2)+mypow(matr[0][1],2));
 	return out;
 }
 
@@ -248,10 +249,10 @@ void normalizeCoff(){
 	VIP_ENCDOUBLE vars1 = varaince(scorec1,mean(scorec1,sizec1),sizec1);
 	VIP_ENCDOUBLE vars2 = varaince(scorec2,mean(scorec2,sizec2),sizec2);
 	
-	VIP_ENCDOUBLE pooledvar = (VIP_ENCDOUBLE)(((sizec1-1)*VIP_ENCDOUBLE(vars1)+(sizec2-1)*VIP_DEC(vars2))/(sizec1+sizec2-2));
+	VIP_ENCDOUBLE pooledvar = ((sizec1-1)*vars1+(sizec2-1)*vars2)/(sizec1+sizec2-2);
 
-	b0 = (VIP_ENCDOUBLE)(VIP_DEC(b0)/sqrt(VIP_DEC(pooledvar)));
-	b1 = (VIP_ENCDOUBLE)(VIP_DEC(b1)/sqrt(VIP_DEC(pooledvar)));			
+	b0 = b0/mysqrt(pooledvar);
+	b1 = b1/mysqrt(pooledvar);			
 }
 
 //displays the output of the training stage and the testing stage
@@ -292,7 +293,7 @@ int main(void){
 	//This variable tells the model which path to take
 	//Path 1 tells that positive score means CLASS1 and negative means CLASS2
 	//Path 2 tells that positive score means CLASS2 and negative score means CLASS1
-	VIP_ENCINT path = (VIP_ENCINT)0;
+	VIP_ENCINT path = 0;
 	{		
 		Stopwatch start("VIP Bench Runtime for Train");		
 		
@@ -312,37 +313,37 @@ int main(void){
 		normalizeCoff();		
 		
 		//Holds the amount of positive scores in class1 while training
-		VIP_ENCINT c1pos = (VIP_ENCINT)0;
+		VIP_ENCINT c1pos = 0;
 		//Holds the amount of positive scores in class2 while training
-		VIP_ENCINT c2pos = (VIP_ENCINT)0;
+		VIP_ENCINT c2pos = 0;
 		
 		#ifndef VIP_NA_MODE
-			VIP_ENCBOOL condition = (VIP_ENCBOOL)false;
-			VIP_ENCINT increment=VIP_ENCINT(0);
+			VIP_ENCBOOL condition = false;
+			VIP_ENCINT increment= 0;
 		#endif
 		
 		for(int i=0;i<sizec1;i++){
-			scorec1[i] = (VIP_ENCDOUBLE)(VIP_DEC(b0)*(VIP_DEC(dataxC1[i])-VIP_DEC(meanx))+VIP_DEC(b1)*(VIP_DEC(datayC1[i])-VIP_DEC(meany)));
+			scorec1[i] = b0*(dataxC1[i]-meanx)+b1*(datayC1[i]-meany);
 			#ifdef VIP_NA_MODE
 				if(scorec1[i]>=0){
 					c1pos++;				
 				}
 			#else
-				condition = (VIP_ENCBOOL)(VIP_DEC(scorec1[i])>=0);
-				increment = (VIP_ENCINT)(VIP_DEC(c1pos)+1);
+				condition = scorec1[i]>=0;
+				increment = c1pos+1;
 				c1pos = VIP_CMOV(condition, increment, c1pos);
 			#endif
 		}
 
 		for(int i=0;i<sizec2;i++){
-			scorec2[i] = (VIP_ENCDOUBLE)(VIP_DEC(b0)*(VIP_DEC(dataxC2[i])-VIP_DEC(meanx))+VIP_DEC(b1)*(VIP_DEC(datayC2[i])-VIP_DEC(meany)));
+			scorec2[i] = b0*(dataxC2[i]-meanx)+b1*(datayC2[i]-meany);
 			#ifdef VIP_NA_MODE
 				if(scorec2[i]>=0){
 					c2pos++;				
 				}
 			#else
-				condition = (VIP_ENCBOOL)(VIP_DEC(scorec2[i])>=0);
-				increment = (VIP_ENCINT)(VIP_DEC(c2pos)+1);
+				condition = scorec2[i]>=0;
+				increment = c2pos+1;
 				c2pos = VIP_CMOV(condition, increment, c2pos);
 			#endif
 		}
@@ -352,7 +353,7 @@ int main(void){
 			}else
 				path = 1;
 		#else
-			condition = (VIP_ENCBOOL)(VIP_DEC(c1pos)<VIP_DEC(c2pos));
+			condition = c1pos<c2pos;
 			path = VIP_CMOV(condition,(VIP_ENCINT)2,(VIP_ENCINT)1);
 		#endif
 		
@@ -361,40 +362,35 @@ int main(void){
 		Stopwatch start("VIP Bench Runtime for Test");
 	
 		#ifndef VIP_NA_MODE
-			VIP_ENCBOOL condition = (VIP_ENCBOOL)false;			
+			VIP_ENCBOOL condition = false;			
 		#endif
 		
 		for(int i = 0;i<sizec1;i++){			
-			VIP_ENCDOUBLE score = (VIP_ENCDOUBLE)(VIP_DEC(b0)*(VIP_DEC(dataxC1test[i])-VIP_DEC(meanx))+VIP_DEC(b1)*(VIP_DEC(datayC1test[i])-VIP_DEC(meany)));	
+			VIP_ENCDOUBLE score = b0*(dataxC1test[i]-meanx)+b1*(datayC1test[i]-meany);	
 			#ifdef VIP_NA_MODE				
-				if(score>=0 && path ==1){
+				if((score>=0 && path ==1) || (score<0 && path ==2)){
 					classPrediction[i] = 1;					
-				}else if(score<0 && path ==2){
-					classPrediction[i] = 1;				
 				}else{
 					classPrediction[i] = 2;					
 				}
 			#else
-				condition = (VIP_ENCBOOL)(VIP_DEC(score)>=0 && VIP_DEC(path) ==1) || (VIP_DEC(score)<0 && VIP_DEC(path) ==2);
-				classPrediction[i] = VIP_CMOV(condition,VIP_ENCINT(1),VIP_ENCINT(2));
+				condition = (score>=0 && path ==1) || (score<0 && path ==2);
+				classPrediction[i] = VIP_CMOV(condition,(VIP_ENCINT)1,(VIP_ENCINT)2);
 			#endif			
 		}for(int i = 0;i<sizec2;i++){			
-			VIP_ENCDOUBLE score = (VIP_ENCDOUBLE)(VIP_DEC(b0)*(VIP_DEC(dataxC2test[i])-VIP_DEC(meanx))+VIP_DEC(b1)*(VIP_DEC(datayC2test[i])-VIP_DEC(meany)));				
+			VIP_ENCDOUBLE score = b0*(dataxC2test[i]-meanx)+b1*(datayC2test[i]-meany);				
 			#ifdef VIP_NA_MODE
-				if(score>=0 && path ==1){
+				if((score>=0 && path ==1) || (score<0 && path ==2)){
 					classPrediction[i+sizec1-1] = 1;					
-				}else if(score<0 && path ==2){
-					classPrediction[i+sizec1-1] = 1;				
 				}else{
 					classPrediction[i+sizec1-1] = 2;					
 				}
 			#else
-				condition = VIP_ENCBOOL((VIP_DEC(score)>=0 && VIP_DEC(path) ==1) || (VIP_DEC(score)<0 && VIP_DEC(path) ==2));
+				condition = (score>=0 && path ==1) || (score<0 && path ==2);
 				classPrediction[i+sizec1-1] = VIP_CMOV(condition,(VIP_ENCINT)1,(VIP_ENCINT)2);
 			#endif				
 		}		
 	}
 	
-	displayOutput(sizet);
-	
+	displayOutput(sizet);	
 }
