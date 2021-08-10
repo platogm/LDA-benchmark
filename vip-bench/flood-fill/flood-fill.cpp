@@ -1,9 +1,12 @@
 #include <iostream>
 #include <iomanip>
+#include <cstdint>
+
 using namespace std;
 
 #include "../config.h"
 #include "utils.h"
+#include "addrDecod.h"
  
 // `M × N` matrix
 #define M 10
@@ -12,11 +15,9 @@ using namespace std;
 //Used to find adjacent values of an element in a matrix
 int row[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
 int col[] = { -1, 0, 1, -1, 1, -1, 0, 1 }; 
-
 #ifndef VIP_NA_MODE 
  struct node{
- 	VIP_ENCINT *ptr = new VIP_ENCINT;
- 	VIP_ENCINT* &group = ptr;
+ 	VIP_ENCINT *ptr = new VIP_ENCINT;//points to a value in the array called group which is created below
  	VIP_ENCBOOL assigned = false;
  };
  
@@ -24,7 +25,7 @@ int col[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
 //An element with location(x,y) here represents the element(x,y) in the input matrix
 //Holds the groups of the elements in the input matrix
 node struct_mat[M][N];
-//Array that holds the group values(Range is from 1-M*N)
+//Array that holds the group values(Range is from 1 upto M*N)
 int group[M*N];
 #endif
 
@@ -42,11 +43,15 @@ void floodfill(VIP_ENCCHAR mat[M][N], VIP_ENCINT x, VIP_ENCINT y, VIP_ENCCHAR re
 		//Holds the current position of the groupIndex
 		int groupIndex = 0;
 		
+		VIP_ENCULONG temp;
+		VIP_ENCULONG temp2;
+		VIP_ENCULONG temp3;				
+		
 		for(int i = 0;i < M;i++){
 			for(int j=0;j<N;j++){		
 				for (int k=0; k < 8; k++){
 		      		if (SAFELOC(i+row[k], j+col[k])){
-		      		
+		      			
 						//Set to true if at least one element adjacent to the 
 						//element in question has been assigned and has the same color	      				
 		      			condition=(struct_mat[i+row[k]][j+col[k]].assigned && mat[i][j] == mat[i+row[k]][j+col[k]]);
@@ -56,11 +61,14 @@ void floodfill(VIP_ENCCHAR mat[M][N], VIP_ENCINT x, VIP_ENCINT y, VIP_ENCCHAR re
 		   				
 		   				//Assigns the group of the current element to the adjacent group if condition is true and
 		   				//It is assigned any group yet
-		   				struct_mat[i][j].group = VIP_CMOV((condition&&!struct_mat[i][j].assigned),struct_mat[i+row[k]][j+col[k]].group,struct_mat[i][j].group);
+		   				temp = intVal(struct_mat[i][j].ptr);		   				
+		   				temp2 = intVal(struct_mat[i+row[k]][j+col[k]].ptr);
+		   				temp3 = VIP_CMOV((condition&&!struct_mat[i][j].assigned),temp2,temp);
+		   				struct_mat[i][j].ptr = addrVal(temp3);		   						   			
 		   				
 		   				//If the condition is true but the current element is already assigned an element then
 		   				//the all element in the adjacent's group is changed to the current elements group  				       		
-		   				*(struct_mat[i+row[k]][j+col[k]].group) = VIP_CMOV(condition&&struct_mat[i][j].assigned,*(struct_mat[i][j].group),*(struct_mat[i+row[k]][j+col[k]].group));
+		   				*(struct_mat[i+row[k]][j+col[k]].ptr) = VIP_CMOV(condition&&struct_mat[i][j].assigned,*(struct_mat[i][j].ptr),*(struct_mat[i+row[k]][j+col[k]].ptr));
 		   				
 		   				//If conditon was set to true the the current element will be assigned(true)          	
 			       		struct_mat[i][j].assigned = VIP_CMOV(condition,true,struct_mat[i][j].assigned);          	          
@@ -70,7 +78,7 @@ void floodfill(VIP_ENCCHAR mat[M][N], VIP_ENCINT x, VIP_ENCINT y, VIP_ENCCHAR re
 		    		group[groupIndex] = groupIndex+1;
 		    		
 		    		//If no adjacent value that fullfils the condition is found then it will be assigned a new group
-		    		*(struct_mat[i][j].group) = VIP_CMOV(!found,group[groupIndex],*(struct_mat[i][j].group));
+		    		*(struct_mat[i][j].ptr) = VIP_CMOV(!found,group[groupIndex],*(struct_mat[i][j].ptr));
 		    		groupIndex++;
 		    		
 		    		//all value are assigned after the finish this phase
@@ -85,13 +93,13 @@ void floodfill(VIP_ENCCHAR mat[M][N], VIP_ENCINT x, VIP_ENCINT y, VIP_ENCCHAR re
 		for (int ix=0; ix < M; ix++){
 			for (int iy=0; iy < N; iy++){
 				VIP_ENCBOOL _istarget = (x == ix && y == iy);
-				targetGr = VIP_CMOV(_istarget, *(struct_mat[ix][iy].group), targetGr);
+				targetGr = VIP_CMOV(_istarget, *(struct_mat[ix][iy].ptr), targetGr);
 			}
 		}
 		//This loop finds each element that is in the target group and assigns it with the replacemnt color	  
 		for(int i=0;i<M;i++){
 		  	for(int j=0;j<N;j++){
-		  		condition = (*(struct_mat[i][j].group) == targetGr);
+		  		condition = (*(struct_mat[i][j].ptr) == targetGr);
 		  		mat[i][j] = VIP_CMOV(condition,replacement,mat[i][j]); 		
 		  	}
 		}
@@ -155,6 +163,6 @@ int main(){
 		floodfill(mat,x, y, replacement);
 	}
 	cout<<"\nAfter\n"<<endl;	
-	printMatrix(mat);	
+	printMatrix(mat);
 }
  
