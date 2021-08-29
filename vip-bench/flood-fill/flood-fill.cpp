@@ -1,12 +1,12 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdint>
+#include <vector>
 
 using namespace std;
 
 #include "../config.h"
 #include "utils.h"
-#include "addrDecod.h"
  
 // `M × N` matrix
 #define M 10
@@ -15,9 +15,14 @@ using namespace std;
 //Used to find adjacent values of an element in a matrix
 int row[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
 int col[] = { -1, 0, 1, -1, 1, -1, 0, 1 }; 
+VIP_ENCINT countP = 0;
+VIP_ENCINT place = 1;
+vector<int> primeNum(M*N,0);
+int groupIndex=0;
 #ifndef VIP_NA_MODE 
  struct node{
- 	VIP_ENCINT *ptr = new VIP_ENCINT;//points to a value in the array called group which is created below
+ 	VIP_ENCULONG sub_group=1;//points to a value in the array called group which is created below
+ 	VIP_ENCULONG group = 1;
  	VIP_ENCBOOL assigned = false;
  };
  
@@ -25,9 +30,61 @@ int col[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
 //An element with location(x,y) here represents the element(x,y) in the input matrix
 //Holds the groups of the elements in the input matrix
 node struct_mat[M][N];
-//Array that holds the group values(Range is from 1 upto M*N)
-int group[M*N];
+
+//Can use this function to see the groups and subgroup
+void printStructMatrix(node struct_mat[M][N])
+{
+  for (int i = 0; i < M; i++)
+  {
+    for (int j = 0; j < N; j++)
+    {
+      cout << setw(6) <<"("<<VIP_DEC(struct_mat[i][j].sub_group)<<","<<VIP_DEC(struct_mat[i][j].group)<<")";
+    }
+    cout << endl;
+  }
+}
+
+//checks if small is a factor of big
+VIP_ENCBOOL isFactor(VIP_ENCDOUBLE big,VIP_ENCDOUBLE small){
+	VIP_ENCDOUBLE temp= big/small;
+	VIP_ENCINT temp1 = big/small;
+	return (temp-temp1)==0;
+}
+
+//generates primeNumbers in a random way
+void generatePrime(){
+	int index=0;
+	vector<int> out(M*N,0);
+	bool found = false;
+	for(int i = 2;true;i++){
+		for(int j=0;j<M*N;j++){
+			if(primeNum[j]==0){
+				break;
+			}
+			if(i%primeNum[j]==0){
+				found=true;
+				break;
+			}
+		}
+		if(!found){	
+			primeNum[index]=i;
+			index++;
+			if(index==M*N)
+				break;
+		}
+		found=false;
+	}
+	index=rand()%(M*N);
+	for(int i=0;i<M*N;i++){
+		while(out[index]!=0){
+			index=rand()%(M*N);
+		}
+		out[index]=primeNum[i];
+	}
+	primeNum=out;
+}
 #endif
+
 
 void floodfill(VIP_ENCCHAR mat[M][N], VIP_ENCINT x, VIP_ENCINT y, VIP_ENCCHAR replacement){	
 	
@@ -38,14 +95,8 @@ void floodfill(VIP_ENCCHAR mat[M][N], VIP_ENCINT x, VIP_ENCINT y, VIP_ENCCHAR re
 		VIP_ENCBOOL condition = false;
 		//Set to true if at least one element adjacent to the 
 		//element in question has been assigned and has the same color
-		VIP_ENCBOOL found = false;	
-		
-		//Holds the current position of the groupIndex
-		int groupIndex = 0;
-		
-		VIP_ENCULONG temp;
-		VIP_ENCULONG temp2;
-		VIP_ENCULONG temp3;				
+		VIP_ENCBOOL found = false;
+		VIP_ENCULONG temp=0;					
 		
 		for(int i = 0;i < M;i++){
 			for(int j=0;j<N;j++){		
@@ -61,45 +112,51 @@ void floodfill(VIP_ENCCHAR mat[M][N], VIP_ENCINT x, VIP_ENCINT y, VIP_ENCCHAR re
 		   				
 		   				//Assigns the group of the current element to the adjacent group if condition is true and
 		   				//It is assigned any group yet
-		   				temp = intVal(struct_mat[i][j].ptr);		   				
-		   				temp2 = intVal(struct_mat[i+row[k]][j+col[k]].ptr);
-		   				temp3 = VIP_CMOV((condition&&!struct_mat[i][j].assigned),temp2,temp);
-		   				struct_mat[i][j].ptr = addrVal(temp3);		   						   			
-		   				
+		   				struct_mat[i][j].sub_group = VIP_CMOV((condition&&!struct_mat[i][j].assigned),struct_mat[i+row[k]][j+col[k]].sub_group,struct_mat[i][j].sub_group);
+		   				struct_mat[i][j].group = VIP_CMOV((condition&&!struct_mat[i][j].assigned),struct_mat[i+row[k]][j+col[k]].group,struct_mat[i][j].group);
+		   					   						   					   				
 		   				//If the condition is true but the current element is already assigned an element then
-		   				//the all element in the adjacent's group is changed to the current elements group  				       		
-		   				*(struct_mat[i+row[k]][j+col[k]].ptr) = VIP_CMOV(condition&&struct_mat[i][j].assigned,*(struct_mat[i][j].ptr),*(struct_mat[i+row[k]][j+col[k]].ptr));
+		   				//the all element in the adjacent's group is changed to the current elements group		   				
+		   				temp = struct_mat[i][j].group*struct_mat[i+row[k]][j+col[k]].group;  				       		
+		   				struct_mat[i+row[k]][j+col[k]].group= VIP_CMOV(condition&&struct_mat[i][j].assigned&&!isFactor(struct_mat[i][j].group,struct_mat[i+row[k]][j+col[k]].group)&&struct_mat[i][j].sub_group!=struct_mat[i+row[k]][j+col[k]].sub_group,temp,struct_mat[i+row[k]][j+col[k]].group);
+		   				struct_mat[i][j].group= VIP_CMOV(condition&&struct_mat[i][j].assigned&&!isFactor(struct_mat[i][j].group,struct_mat[i+row[k]][j+col[k]].group)&&struct_mat[i][j].sub_group!=struct_mat[i+row[k]][j+col[k]].sub_group,temp,struct_mat[i][j].group);		   			
+		   				
+		   				temp = VIP_CMOV(struct_mat[i][j].group>struct_mat[i+row[k]][j+col[k]].group,struct_mat[i][j].group,struct_mat[i+row[k]][j+col[k]].group);
+		   				struct_mat[i][j].group = VIP_CMOV(condition&&struct_mat[i][j].assigned&&struct_mat[i][j].sub_group==struct_mat[i+row[k]][j+col[k]].sub_group,temp,struct_mat[i][j].group);
+		   				struct_mat[i+row[k]][j+col[k]].group = VIP_CMOV(condition&&struct_mat[i][j].assigned&&struct_mat[i][j].sub_group==struct_mat[i+row[k]][j+col[k]].sub_group,temp,struct_mat[i+row[k]][j+col[k]].group);				
 		   				
 		   				//If conditon was set to true the the current element will be assigned(true)          	
-			       		struct_mat[i][j].assigned = VIP_CMOV(condition,true,struct_mat[i][j].assigned);          	          
+			       		struct_mat[i][j].assigned = VIP_CMOV(condition,true,struct_mat[i][j].assigned);	       		          	          
 		   			}
-			  }		
-			  		//value is added to group array
-		    		group[groupIndex] = groupIndex+1;
-		    		
+			  }					  				    		
 		    		//If no adjacent value that fullfils the condition is found then it will be assigned a new group
-		    		*(struct_mat[i][j].ptr) = VIP_CMOV(!found,group[groupIndex],*(struct_mat[i][j].ptr));
-		    		groupIndex++;
+		    		struct_mat[i][j].sub_group = VIP_CMOV(!found,primeNum[groupIndex],struct_mat[i][j].sub_group);
+		    		struct_mat[i][j].group = VIP_CMOV(!found,struct_mat[i][j].sub_group,struct_mat[i][j].group);
 		    		
 		    		//all value are assigned after the finish this phase
 		    		struct_mat[i][j].assigned = true;
 		    		//found variable is reset for the next iteration
 		    		found=false;
+		    		groupIndex++;
 			}	
 		}
 		
 		//Holds the value of the group to be changed
-		VIP_ENCINT targetGr = 0;
+		VIP_ENCULONG targetGr = 1;
 		for (int ix=0; ix < M; ix++){
 			for (int iy=0; iy < N; iy++){
 				VIP_ENCBOOL _istarget = (x == ix && y == iy);
-				targetGr = VIP_CMOV(_istarget, *(struct_mat[ix][iy].ptr), targetGr);
+				targetGr = VIP_CMOV(_istarget,struct_mat[ix][iy].group,targetGr);
+				targetGr = VIP_CMOV(condition&&isFactor(struct_mat[ix][iy].group,targetGr),struct_mat[ix][iy].group,targetGr);
+				condition = VIP_CMOV(_istarget,true,condition);
+
 			}
 		}
+		
 		//This loop finds each element that is in the target group and assigns it with the replacemnt color	  
 		for(int i=0;i<M;i++){
-		  	for(int j=0;j<N;j++){
-		  		condition = (*(struct_mat[i][j].ptr) == targetGr);
+		  	for(int j=0;j<N;j++){		  	
+		  		condition = (isFactor(targetGr,struct_mat[i][j].sub_group));		  		
 		  		mat[i][j] = VIP_CMOV(condition,replacement,mat[i][j]); 		
 		  	}
 		}
@@ -128,19 +185,19 @@ printMatrix(VIP_ENCCHAR mat[M][N])
   {
     for (int j = 0; j < N; j++)
     {
-      cout << setw(3) << VIP_DEC(mat[i][j]);
+      cout << setw(4) << VIP_DEC(mat[i][j]);
     }
     cout << endl;
   }
 }
 
-
-
-
 int main(){
 
 	VIP_ENCINT x = 3, y = 9;
 	VIP_ENCCHAR replacement = 'C';
+	#ifndef VIP_NA_MODE
+		generatePrime();
+	#endif
 	
 	VIP_ENCCHAR mat[M][N] =
 	{
@@ -164,5 +221,6 @@ int main(){
 	}
 	cout<<"\nAfter\n"<<endl;	
 	printMatrix(mat);
+	cout<<endl<<endl;	
 }
  

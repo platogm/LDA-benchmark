@@ -2,7 +2,7 @@ LOCAL_CFLAGS= -I../common
 LOCAL_LIBS=
 
 PROG=flood-fill
-OBJS=flood-fill.o ../common/utils.o addrDecod.o
+OBJS=flood-fill.o ../common/utils.o
 
 include ../Makefile
 
